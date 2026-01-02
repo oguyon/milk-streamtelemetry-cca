@@ -66,10 +66,12 @@ int main(int argc, char *argv[]) {
         nvec = (int)N;
     }
 
-    // Center Data
-    printf("Centering data...\n");
-    center_columns(X, N, Pa);
-    center_columns(Y, N, Qb);
+    // Center Data?
+    // User requested "Do not de-average the input" for PCA.
+    // We apply this globally. The first mode (of PCA or CCA?) will likely capture the mean.
+    // printf("Centering data...\n");
+    // center_columns(X, N, Pa);
+    // center_columns(Y, N, Qb);
 
     double *A_vec_cca = NULL, *B_vec_cca = NULL;
 

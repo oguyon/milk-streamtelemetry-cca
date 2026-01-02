@@ -59,14 +59,8 @@ int main(int argc, char *argv[]) {
     // "Make the PCA a separate program... provide a program that reconstructs...".
     // If I center, reconstruction X_rec = C*M + Mean.
     // If I don't save Mean, I can't reconstruct X_rec exactly.
-    // But maybe the user just wants the variation.
-    // I will center, because "PCA" implies it.
-    // And I will accept that reconstruction is "centered reconstruction".
-    // Wait. If I don't center, the first mode will be the mean. This is often acceptable in image processing.
-    // Let's center to be consistent with `cca.c`.
-
-    printf("Centering data...\n");
-    center_columns(X, N, P);
+    // User requested "Do not de-average the input. The first mode of the PCA should be the average".
+    // So we do NOT center the data. SVD on raw data.
 
     // SVD
     long K = (N < P) ? N : P;
