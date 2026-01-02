@@ -1,5 +1,4 @@
-# milk-streamtelemetry-cca
-Canonical Correlation Analysis and PCA tools for synchronized telemetry sets.
+# milk-streamtelemetry-lintools
 
 ## Description
 
