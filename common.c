@@ -118,24 +118,3 @@ void write_fits_2d(const char *filename, double *data, long width, long height) 
     fits_close_file(fptr, &status);
     CHECK_STATUS(status);
 }
-
-void center_columns(double *data, long N, long P) {
-    double *means = (double *)calloc(P, sizeof(double));
-    if (!means) exit(1);
-
-    for (long i = 0; i < N; i++) {
-        for (long j = 0; j < P; j++) {
-            means[j] += data[i * P + j];
-        }
-    }
-    for (long j = 0; j < P; j++) {
-        means[j] /= N;
-    }
-
-    for (long i = 0; i < N; i++) {
-        for (long j = 0; j < P; j++) {
-            data[i * P + j] -= means[j];
-        }
-    }
-    free(means);
-}

@@ -22,7 +22,4 @@ void write_fits_3d(const char *filename, double *data, int xa, int ya, int z_dim
 // width = P (columns/pixels), height = N (samples).
 void write_fits_2d(const char *filename, double *data, long width, long height);
 
-// Centers the columns of the N x P data matrix.
-void center_columns(double *data, long N, long P);
-
 #endif
