@@ -12,6 +12,24 @@ void perform_pca(double *X, long N, long P, int npca, double **Coeffs, double **
 void perform_cca_float(float *X, long N, long P, float *Y, long Q, int nvec, float **A_vec, float **B_vec);
 void perform_pca_float(float *X, long N, long P, int npca, float **Coeffs, float **Modes, const char* out_filename, int xa, int ya);
 
+void print_help(const char *progname) {
+    fprintf(stderr, "Usage: %s [options] <nvec> <A.fits> <B.fits>\n", progname);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Performs Canonical Correlation Analysis (CCA) between two datasets.\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Arguments:\n");
+    fprintf(stderr, "  <nvec>          Number of canonical vectors to compute.\n");
+    fprintf(stderr, "  <A.fits>        Input dataset A (3D cube or 2D coefficients).\n");
+    fprintf(stderr, "  <B.fits>        Input dataset B (3D cube or 2D coefficients).\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -npca <n>       Pre-process inputs with PCA (keep n modes) before CCA.\n");
+    fprintf(stderr, "  -ncpu <n>       Set number of CPU threads (OpenBLAS).\n");
+    fprintf(stderr, "  -float          Use single precision (float) instead of double.\n");
+    fprintf(stderr, "  -shift <n>      Time shift dataset B by n steps (positive or negative).\n");
+    fprintf(stderr, "\n");
+}
+
 int main(int argc, char *argv[]) {
     int npca = 0;
     int ncpu = 0;
@@ -23,7 +41,10 @@ int main(int argc, char *argv[]) {
     // Basic argument parsing loop
     int i = 1;
     while (i < argc) {
-        if (strcmp(argv[i], "-npca") == 0) {
+        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            print_help(argv[0]);
+            return 0;
+        } else if (strcmp(argv[i], "-npca") == 0) {
             if (i + 1 >= argc) {
                 fprintf(stderr, "Error: -npca requires an argument.\n");
                 return 1;
@@ -65,7 +86,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (argc - arg_offset != 4) {
-         fprintf(stderr, "Usage: %s [-npca <n>] [-ncpu <n>] [-float] [-shift <n>] <nvec> <A.fits> <B.fits>\n", argv[0]);
+         print_help(argv[0]);
          return 1;
     }
 
