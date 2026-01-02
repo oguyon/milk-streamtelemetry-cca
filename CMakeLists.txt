@@ -40,6 +40,16 @@ target_link_libraries(gen_data PRIVATE
     ${CFITSIO_LIBRARIES}
 )
 
+# Cube Shuffle Program
+add_executable(milk-streamtelemetry-cubeshuffle cubeshuffle.c)
+target_include_directories(milk-streamtelemetry-cubeshuffle PRIVATE
+    ${CFITSIO_INCLUDE_DIRS}
+)
+target_link_libraries(milk-streamtelemetry-cubeshuffle PRIVATE
+    common
+    ${CFITSIO_LIBRARIES}
+)
+
 # PCA Program
 add_executable(milk-streamtelemetry-pca pca.c)
 target_include_directories(milk-streamtelemetry-pca PRIVATE
