@@ -30,16 +30,6 @@ target_link_libraries(milk-streamtelemetry-cca PRIVATE
     m
 )
 
-# Test Data Generator
-add_executable(gen_data gen_data.c)
-target_include_directories(gen_data PRIVATE
-    ${CFITSIO_INCLUDE_DIRS}
-)
-target_link_libraries(gen_data PRIVATE
-    common
-    ${CFITSIO_LIBRARIES}
-)
-
 # Mode Projection Program
 add_executable(milk-streamtelemetry-modeval modeval.c)
 target_include_directories(milk-streamtelemetry-modeval PRIVATE
