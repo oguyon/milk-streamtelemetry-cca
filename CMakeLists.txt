@@ -95,3 +95,14 @@ target_link_libraries(milk-streamtelemetry-pcamerge PRIVATE
     ${LAPACKE_LIBRARIES}
     m
 )
+
+# Earth Sequence Generator
+add_executable(milk-streamtelemetry-mkearthseq mkearthseq.c)
+target_include_directories(milk-streamtelemetry-mkearthseq PRIVATE
+    ${CFITSIO_INCLUDE_DIRS}
+)
+target_link_libraries(milk-streamtelemetry-mkearthseq PRIVATE
+    common
+    ${CFITSIO_LIBRARIES}
+    m
+)
