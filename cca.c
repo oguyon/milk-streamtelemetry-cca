@@ -28,6 +28,18 @@ void print_help(const char *progname) {
     fprintf(stderr, "  -float          Use single precision (float) instead of double.\n");
     fprintf(stderr, "  -shift <n>      Time shift dataset B by n steps (positive or negative).\n");
     fprintf(stderr, "\n");
+    fprintf(stderr, "Outputs:\n");
+    fprintf(stderr, "  Canonical Correlations (singular values) are printed to standard output.\n");
+    fprintf(stderr, "  Files created in the current directory:\n");
+    fprintf(stderr, "    ccaA.fits     Canonical vectors for dataset A (nvec x P).\n");
+    fprintf(stderr, "    ccaB.fits     Canonical vectors for dataset B (nvec x Q).\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr, "  If -npca is used:\n");
+    fprintf(stderr, "    pcaA.fits     PCA spatial modes for A (npca x P).\n");
+    fprintf(stderr, "    pcaB.fits     PCA spatial modes for B (npca x Q).\n");
+    fprintf(stderr, "    ccaA.fits     Projected Canonical vectors for A (nvec x P).\n");
+    fprintf(stderr, "    ccaB.fits     Projected Canonical vectors for B (nvec x Q).\n");
+    fprintf(stderr, "\n");
 }
 
 int main(int argc, char *argv[]) {
