@@ -96,13 +96,15 @@ The PNG images in this report were generated using the `3DFITS-to-png` tool:
 ```
 
 
-## 6. CCA Corner Plot
+## 6. CCA variables
 
 Scatter plots of canonical variables $ vs $. The diagonal (=j$) should show the strongest correlations.
+Correlation $ is shown on each plot. $\sigma$ values indicate standard deviation of the variables.
 
-![CCA Corner Plot](cca_corner.png)
+![CCA Variables](cca_corner.png)
 
-**Gnuplot Script:**
-```gnuplot
-$(cat "./plot_cca.gp")
-```
+## 7. PCA variables
+
+Scatter plots of PCA coefficients $ vs $.
+
+![PCA Variables](pca_corner.png)
