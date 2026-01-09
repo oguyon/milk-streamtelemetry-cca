@@ -35,7 +35,18 @@ echo "Visualizing Modes..."
 $FITS2PNG "$TEST_DIR/modesA.fits" "$TEST_DIR/modesA.png" -slices 0,1,2,3,4 -geom 5x1
 $FITS2PNG "$TEST_DIR/modesB.fits" "$TEST_DIR/modesB.png" -slices 0,1,2,3,4 -geom 5x1
 
-# 5. Generate Report
+# 5. Reconstruct from PCA
+echo "Reconstructing earthA..."
+"$BUILD_DIR/milk-streamtelemetry-recon" "$TEST_DIR/modesA.fits" "$TEST_DIR/coeffsA.fits" "$TEST_DIR/reconA.fits"
+
+echo "Reconstructing earthB..."
+"$BUILD_DIR/milk-streamtelemetry-recon" "$TEST_DIR/modesB.fits" "$TEST_DIR/coeffsB.fits" "$TEST_DIR/reconB.fits"
+
+echo "Visualizing Reconstruction..."
+$FITS2PNG "$TEST_DIR/reconA.fits" "$TEST_DIR/reconA_frames.png" -n 5 -geom 5x1
+$FITS2PNG "$TEST_DIR/reconB.fits" "$TEST_DIR/reconB_frames.png" -n 5 -geom 5x1
+
+# 6. Generate Report
 echo "Generating Report..."
 cat <<EOF > "$TEST_DIR/report.md"
 # Milk Stream Telemetry Test Report
@@ -61,6 +72,16 @@ Principal Component Analysis was performed on both datasets (10 modes). Below ar
 
 ### Earth B Modes
 ![Earth B Modes](modesB.png)
+
+## PCA Reconstruction
+
+The datasets were reconstructed using the computed modes and coefficients.
+
+### Earth A Reconstruction
+![Earth A Reconstruction](reconA_frames.png)
+
+### Earth B Reconstruction
+![Earth B Reconstruction](reconB_frames.png)
 
 EOF
 
