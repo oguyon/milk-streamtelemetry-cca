@@ -5,6 +5,30 @@
 #include <math.h>
 #include <png.h>
 
+// Helper to parse comma-separated list of integers
+int* parse_int_list(const char *str, int *count) {
+    int capacity = 10;
+    int *list = malloc(capacity * sizeof(int));
+    *count = 0;
+
+    const char *p = str;
+    while (*p) {
+        char *end;
+        long val = strtol(p, &end, 10);
+        if (p == end) break; // No number found
+
+        if (*count >= capacity) {
+            capacity *= 2;
+            list = realloc(list, capacity * sizeof(int));
+        }
+        list[(*count)++] = (int)val;
+
+        p = end;
+        if (*p == ',') p++;
+    }
+    return list;
+}
+
 void write_png(const char *filename, unsigned char *image, int width, int height) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
@@ -52,19 +76,54 @@ void write_png(const char *filename, unsigned char *image, int width, int height
     fclose(fp);
 }
 
+void print_usage(const char *progname) {
+    fprintf(stderr, "Usage: %s <input.fits> <output.png> [options]\n", progname);
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -n <N>            Number of automatically selected slices (default: 5)\n");
+    fprintf(stderr, "  -slices <list>    Comma-separated list of slice indices (e.g. 0,10,20)\n");
+    fprintf(stderr, "  -geom <cols>x<rows> Tile geometry (default: N x 1)\n");
+}
+
 int main(int argc, char *argv[]) {
-    if (argc != 4) {
-        fprintf(stderr, "Usage: %s <input.fits> <N> <output.png>\n", argv[0]);
+    if (argc < 3) {
+        print_usage(argv[0]);
         return 1;
     }
 
     const char *input_file = argv[1];
-    int N_slices = atoi(argv[2]);
-    const char *output_file = argv[3];
+    const char *output_file = argv[2];
 
-    if (N_slices <= 0) {
-        fprintf(stderr, "Error: N must be greater than 0.\n");
-        return 1;
+    int n_auto = 5;
+    int *explicit_indices = NULL;
+    int explicit_count = 0;
+    int geom_cols = 0;
+    int geom_rows = 0;
+
+    // Parse arguments
+    for (int i = 3; i < argc; i++) {
+        if (strcmp(argv[i], "-n") == 0) {
+            if (i + 1 < argc) {
+                n_auto = atoi(argv[i+1]);
+                i++;
+            }
+        } else if (strcmp(argv[i], "-slices") == 0) {
+            if (i + 1 < argc) {
+                explicit_indices = parse_int_list(argv[i+1], &explicit_count);
+                i++;
+            }
+        } else if (strcmp(argv[i], "-geom") == 0) {
+            if (i + 1 < argc) {
+                if (sscanf(argv[i+1], "%dx%d", &geom_cols, &geom_rows) != 2) {
+                    fprintf(stderr, "Error: Invalid geometry format. Use COLSxROWS (e.g. 4x3)\n");
+                    return 1;
+                }
+                i++;
+            }
+        } else {
+            fprintf(stderr, "Unknown option: %s\n", argv[i]);
+            print_usage(argv[0]);
+            return 1;
+        }
     }
 
     // Read FITS
@@ -73,15 +132,12 @@ int main(int argc, char *argv[]) {
     int width, height, nframes;
     int xa, ya, naxis;
 
-    // read_fits_float(const char *filename, float **data, long *N, long *P, int *xa, int *ya, int *naxis_out);
-    // For 3D: N=naxis3 (frames), P=naxis1*naxis2 (pixels/frame). xa=naxis1, ya=naxis2.
-    // read_fits_float allocates data.
-
     read_fits_float(input_file, &data, &n_frames_long, &pixels_per_frame, &xa, &ya, &naxis);
 
     if (naxis != 3) {
         fprintf(stderr, "Error: Input FITS file must be 3D cube (found NAXIS=%d).\n", naxis);
         free(data);
+        if (explicit_indices) free(explicit_indices);
         return 1;
     }
 
@@ -90,32 +146,58 @@ int main(int argc, char *argv[]) {
     height = ya;
     long pix_per_frame = (long)width * height;
 
-    if (N_slices > nframes) {
-        fprintf(stderr, "Warning: N (%d) > nframes (%d). Setting N = nframes.\n", N_slices, nframes);
-        N_slices = nframes;
+    // Determine slices to extract
+    int N_slices = 0;
+    int *indices = NULL;
+
+    if (explicit_indices) {
+        N_slices = explicit_count;
+        indices = explicit_indices;
+        // Validate indices
+        for (int i=0; i<N_slices; i++) {
+            if (indices[i] < 0 || indices[i] >= nframes) {
+                fprintf(stderr, "Error: Slice index %d out of bounds [0, %d]\n", indices[i], nframes-1);
+                free(data);
+                free(indices);
+                return 1;
+            }
+        }
+    } else {
+        N_slices = n_auto;
+        if (N_slices <= 0) N_slices = 1;
+        if (N_slices > nframes) {
+             fprintf(stderr, "Warning: N (%d) > nframes (%d). Setting N = nframes.\n", N_slices, nframes);
+             N_slices = nframes;
+        }
+        indices = (int*) malloc(N_slices * sizeof(int));
+        if (N_slices == 1) {
+            indices[0] = 0;
+        } else {
+            double step = (double)(nframes - 1) / (double)(N_slices - 1);
+            for (int i = 0; i < N_slices; i++) {
+                indices[i] = (int)(i * step + 0.5);
+                if (indices[i] >= nframes) indices[i] = nframes - 1;
+            }
+        }
+    }
+
+    // Determine Geometry
+    if (geom_cols > 0 && geom_rows > 0) {
+        // User specified geometry
+        // Check if fits
+        if (geom_cols * geom_rows < N_slices) {
+            fprintf(stderr, "Warning: Geometry %dx%d (%d slots) is smaller than number of slices (%d).\n",
+                    geom_cols, geom_rows, geom_cols*geom_rows, N_slices);
+            // We'll just display the first slots
+        }
+    } else {
+        // Default: Side by side
+        geom_cols = N_slices;
+        geom_rows = 1;
     }
 
     printf("Input: %s (%dx%dx%d)\n", input_file, width, height, nframes);
-    printf("Extracting %d slices...\n", N_slices);
-
-    // Determine indices
-    int *indices = (int*) malloc(N_slices * sizeof(int));
-    // Use stride
-    // if N=1, take index 0.
-    // if N=nframes, take all.
-    // if N < nframes, take linearly spaced.
-    // stride = (double)(nframes - 1) / (N_slices - 1) ?
-    // Let's use simple integer arithmetic for stability or float stepping.
-
-    if (N_slices == 1) {
-        indices[0] = 0;
-    } else {
-        double step = (double)(nframes - 1) / (double)(N_slices - 1);
-        for (int i = 0; i < N_slices; i++) {
-            indices[i] = (int)(i * step + 0.5);
-            if (indices[i] >= nframes) indices[i] = nframes - 1;
-        }
-    }
+    printf("Extracting %d slices -> Output Grid %dx%d\n", N_slices, geom_cols, geom_rows);
 
     // Find Global Min/Max across selected slices
     float min_val = 1e30f;
@@ -133,40 +215,36 @@ int main(int argc, char *argv[]) {
     }
 
     printf("Global range: [%g, %g]\n", min_val, max_val);
-
-    if (max_val == min_val) max_val = min_val + 1.0f; // Avoid div/0
+    if (max_val == min_val) max_val = min_val + 1.0f;
 
     // Construct Output Image
-    // Side by side: Width = N * width, Height = height
-    int out_width = N_slices * width;
-    int out_height = height;
+    int out_width = geom_cols * width;
+    int out_height = geom_rows * height;
 
     unsigned char *png_data = (unsigned char*) calloc(out_width * out_height, sizeof(unsigned char));
 
     for (int i = 0; i < N_slices; i++) {
+        // Check if i exceeds geometry capacity
+        if (i >= geom_cols * geom_rows) break;
+
+        int grid_x = i % geom_cols;
+        int grid_y = i / geom_cols;
+
         int t = indices[i];
         long offset = t * pix_per_frame;
 
-        // Copy slice i to png_data at x-offset i*width
+        int start_x = grid_x * width;
+        int start_y = grid_y * height;
+
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 float v = data[offset + y * width + x];
-                // Normalize
                 float norm = (v - min_val) / (max_val - min_val);
                 if (norm < 0) norm = 0;
                 if (norm > 1) norm = 1;
-
                 unsigned char byte_val = (unsigned char)(norm * 255.0f);
 
-                // PNG row pointers usually start from top.
-                // FITS usually stores bottom-to-top or top-to-bottom depending on convention.
-                // common.c likely reads it into array order.
-                // Let's assume standard C array order matching write_fits_2d logic.
-
-                int out_x = i * width + x;
-                int out_y = y; // Keep same orientation
-
-                png_data[out_y * out_width + out_x] = byte_val;
+                png_data[(start_y + y) * out_width + (start_x + x)] = byte_val;
             }
         }
     }
