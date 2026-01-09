@@ -46,7 +46,35 @@ echo "Visualizing Reconstruction..."
 $FITS2PNG "$TEST_DIR/reconA.fits" "$TEST_DIR/reconA_frames.png" -n 5 -geom 5x1
 $FITS2PNG "$TEST_DIR/reconB.fits" "$TEST_DIR/reconB_frames.png" -n 5 -geom 5x1
 
-# 6. Generate Report
+# 6. Run CCA
+echo "Running CCA between earthA and earthB..."
+# Using -npca 10 to reduce dimensionality before CCA
+"$BUILD_DIR/milk-streamtelemetry-cca" -npca 10 5 "$TEST_DIR/earthA.fits" "$TEST_DIR/earthB.fits"
+
+# CCA outputs ccaA.fits and ccaB.fits (canonical vectors) in the current directory (or where run from?)
+# The code writes to "ccaA.fits" and "ccaB.fits".
+# If we run from TEST_DIR, they will be there.
+# Let's ensure they are moved or we run in TEST_DIR.
+# Since we are running with $TEST_DIR paths, the C code opens those files.
+# But it writes to "ccaA.fits" (hardcoded). So it writes to CWD.
+# We are running this script. The CWD is where we invoke it from.
+# The previous steps used $TEST_DIR for outputs.
+# Let's assume we run this script from its directory or handle the moves.
+# The step "$BUILD_DIR/milk-streamtelemetry-cca" will write to CWD.
+
+# Only move if the source and destination are different
+if [ ! "ccaA.fits" -ef "$TEST_DIR/ccaA.fits" ]; then
+    mv ccaA.fits "$TEST_DIR/ccaA.fits"
+fi
+if [ ! "ccaB.fits" -ef "$TEST_DIR/ccaB.fits" ]; then
+    mv ccaB.fits "$TEST_DIR/ccaB.fits"
+fi
+
+echo "Visualizing CCA Vectors..."
+$FITS2PNG "$TEST_DIR/ccaA.fits" "$TEST_DIR/ccaA_vectors.png" -slices 0,1,2,3,4 -geom 5x1
+$FITS2PNG "$TEST_DIR/ccaB.fits" "$TEST_DIR/ccaB_vectors.png" -slices 0,1,2,3,4 -geom 5x1
+
+# 7. Generate Report
 echo "Generating Report..."
 cat <<EOF > "$TEST_DIR/report.md"
 # Milk Stream Telemetry Test Report
@@ -108,7 +136,23 @@ $BUILD_DIR/milk-streamtelemetry-recon modesB.fits coeffsB.fits reconB.fits
 ### Earth B Reconstruction
 ![Earth B Reconstruction](reconB_frames.png)
 
-## 4. Visualization Commands
+## 4. CCA Analysis
+
+Canonical Correlation Analysis was performed between Earth A and Earth B, using the top 10 PCA modes for data reduction.
+
+**Commands:**
+\`\`\`bash
+# Run CCA (5 vectors, using top 10 PCA modes)
+$BUILD_DIR/milk-streamtelemetry-cca -npca 10 5 earthA.fits earthB.fits
+\`\`\`
+
+### Earth A Canonical Vectors (First 5)
+![Earth A CCA](ccaA_vectors.png)
+
+### Earth B Canonical Vectors (First 5)
+![Earth B CCA](ccaB_vectors.png)
+
+## 5. Visualization Commands
 
 The PNG images in this report were generated using the \`3DFITS-to-png\` tool:
 
@@ -124,6 +168,10 @@ $FITS2PNG modesB.fits modesB.png -slices 0,1,2,3,4 -geom 5x1
 # Visualize Reconstruction
 $FITS2PNG reconA.fits reconA_frames.png -n 5 -geom 5x1
 $FITS2PNG reconB.fits reconB_frames.png -n 5 -geom 5x1
+
+# Visualize CCA
+$FITS2PNG ccaA.fits ccaA_vectors.png -slices 0,1,2,3,4 -geom 5x1
+$FITS2PNG ccaB.fits ccaB_vectors.png -slices 0,1,2,3,4 -geom 5x1
 \`\`\`
 
 EOF

@@ -57,7 +57,23 @@ The datasets were reconstructed using the computed modes and coefficients.
 ### Earth B Reconstruction
 ![Earth B Reconstruction](reconB_frames.png)
 
-## 4. Visualization Commands
+## 4. CCA Analysis
+
+Canonical Correlation Analysis was performed between Earth A and Earth B, using the top 10 PCA modes for data reduction.
+
+**Commands:**
+```bash
+# Run CCA (5 vectors, using top 10 PCA modes)
+../build/milk-streamtelemetry-cca -npca 10 5 earthA.fits earthB.fits
+```
+
+### Earth A Canonical Vectors (First 5)
+![Earth A CCA](ccaA_vectors.png)
+
+### Earth B Canonical Vectors (First 5)
+![Earth B CCA](ccaB_vectors.png)
+
+## 5. Visualization Commands
 
 The PNG images in this report were generated using the `3DFITS-to-png` tool:
 
@@ -73,4 +89,8 @@ The PNG images in this report were generated using the `3DFITS-to-png` tool:
 # Visualize Reconstruction
 ../build/milk-streamtelemetry-3DFITS-to-png reconA.fits reconA_frames.png -n 5 -geom 5x1
 ../build/milk-streamtelemetry-3DFITS-to-png reconB.fits reconB_frames.png -n 5 -geom 5x1
+
+# Visualize CCA
+../build/milk-streamtelemetry-3DFITS-to-png ccaA.fits ccaA_vectors.png -slices 0,1,2,3,4 -geom 5x1
+../build/milk-streamtelemetry-3DFITS-to-png ccaB.fits ccaB_vectors.png -slices 0,1,2,3,4 -geom 5x1
 ```
