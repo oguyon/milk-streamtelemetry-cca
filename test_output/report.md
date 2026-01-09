@@ -21,3 +21,13 @@ Principal Component Analysis was performed on both datasets (10 modes). Below ar
 
 ### Earth B Modes
 ![Earth B Modes](modesB.png)
+
+## PCA Reconstruction
+
+The datasets were reconstructed using the computed modes and coefficients.
+
+### Earth A Reconstruction
+![Earth A Reconstruction](reconA_frames.png)
+
+### Earth B Reconstruction
+![Earth B Reconstruction](reconB_frames.png)
