@@ -173,6 +173,8 @@ $FITS2PNG ccaAvec.fits ccaA_vectors.png -slices 0,1,2,3,4 -geom 5x1
 $FITS2PNG ccaBvec.fits ccaB_vectors.png -slices 0,1,2,3,4 -geom 5x1
 \`\`\`
 
+EOF
+
 # 8. Generate Corner Plot
 echo "Generating Corner Plot of Canonical Variables..."
 
@@ -227,7 +229,7 @@ Scatter plots of canonical variables $A_i$ vs $B_j$. The diagonal ($i=j$) should
 
 **Gnuplot Script:**
 \`\`\`gnuplot
-$(cat "$GP_SCRIPT")
+\$(cat "$GP_SCRIPT")
 \`\`\`
 
 EOF
