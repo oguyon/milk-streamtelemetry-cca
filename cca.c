@@ -31,14 +31,16 @@ void print_help(const char *progname) {
     fprintf(stderr, "Outputs:\n");
     fprintf(stderr, "  Canonical Correlations (singular values) are printed to standard output.\n");
     fprintf(stderr, "  Files created in the current directory:\n");
-    fprintf(stderr, "    ccaA.fits     Canonical vectors for dataset A (nvec x P).\n");
-    fprintf(stderr, "    ccaB.fits     Canonical vectors for dataset B (nvec x Q).\n");
+    fprintf(stderr, "    ccaAvec.fits  Canonical vectors for dataset A (nvec x P).\n");
+    fprintf(stderr, "    ccaBvec.fits  Canonical vectors for dataset B (nvec x Q).\n");
+    fprintf(stderr, "    ccaAvar.fits  Canonical variables for dataset A (N x nvec).\n");
+    fprintf(stderr, "    ccaBvar.fits  Canonical variables for dataset B (N x nvec).\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "  If -npca is used:\n");
     fprintf(stderr, "    pcaA.fits     PCA spatial modes for A (npca x P).\n");
     fprintf(stderr, "    pcaB.fits     PCA spatial modes for B (npca x Q).\n");
-    fprintf(stderr, "    ccaA.fits     Projected Canonical vectors for A (nvec x P).\n");
-    fprintf(stderr, "    ccaB.fits     Projected Canonical vectors for B (nvec x Q).\n");
+    fprintf(stderr, "    ccaAvec.fits  Projected Canonical vectors for A (nvec x P).\n");
+    fprintf(stderr, "    ccaBvec.fits  Projected Canonical vectors for B (nvec x Q).\n");
     fprintf(stderr, "\n");
 }
 

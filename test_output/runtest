@@ -175,62 +175,122 @@ $FITS2PNG ccaBvec.fits ccaB_vectors.png -slices 0,1,2,3,4 -geom 5x1
 
 EOF
 
-# 8. Generate Corner Plot
-echo "Generating Corner Plot of Canonical Variables..."
+# 8. Generate Plots (CCA and PCA Variables)
+echo "Generating Variable Plots..."
 
+# --- CCA ---
 # Convert FITS variables to ASCII
 "$BUILD_DIR/milk-streamtelemetry-fits2ascii" "$TEST_DIR/ccaAvar.fits" > "$TEST_DIR/ccaAvar.txt"
 "$BUILD_DIR/milk-streamtelemetry-fits2ascii" "$TEST_DIR/ccaBvar.fits" > "$TEST_DIR/ccaBvar.txt"
-
-# Combine side-by-side
 paste "$TEST_DIR/ccaAvar.txt" "$TEST_DIR/ccaBvar.txt" > "$TEST_DIR/cca_vars.dat"
 
-# Gnuplot script
-GP_SCRIPT="$TEST_DIR/plot_cca.gp"
-cat <<ENDGP > "$GP_SCRIPT"
-set terminal pngcairo size 1000,1000 enhanced font "Arial,10"
-set output "$TEST_DIR/cca_corner.png"
-set multiplot layout 5,5 rowsfirst title "CCA Canonical Variables Corner Plot"
+# --- PCA ---
+# Convert FITS coefficients to ASCII
+"$BUILD_DIR/milk-streamtelemetry-fits2ascii" "$TEST_DIR/coeffsA.fits" > "$TEST_DIR/coeffsA.txt"
+"$BUILD_DIR/milk-streamtelemetry-fits2ascii" "$TEST_DIR/coeffsB.fits" > "$TEST_DIR/coeffsB.txt"
+paste "$TEST_DIR/coeffsA.txt" "$TEST_DIR/coeffsB.txt" > "$TEST_DIR/pca_vars.dat"
 
-# Data file structure:
-# Cols 1-5: A0..A4
-# Cols 6-10: B0..B4
+# Gnuplot Template Function
+# Arguments: 1=DataFile, 2=OutputFile, 3=Title, 4=VarNameA, 5=VarNameB
+generate_plot() {
+    DATA_FILE="$1"
+    OUT_FILE="$2"
+    TITLE="$3"
+    VAR_A="$4"
+    VAR_B="$5"
+    SCRIPT_FILE="${OUT_FILE%.*}.gp"
+
+    cat <<ENDGP > "$SCRIPT_FILE"
+set terminal pngcairo size 1000,1000 enhanced font "Arial,10"
+set output "$OUT_FILE"
+
+# Margins
+set lmargin 0
+set rmargin 0
+set tmargin 0
+set bmargin 0
+
+set multiplot layout 5,5 rowsfirst title "$TITLE" offset 0,-0.05
+
+# Pre-calculate standard deviations
+array stdA[5]
+array stdB[5]
+do for [k=1:5] {
+    stats "$DATA_FILE" u k nooutput
+    stdA[k] = STATS_stddev
+    stats "$DATA_FILE" u (k+5) nooutput
+    stdB[k] = STATS_stddev
+}
 
 do for [j=0:4] {
     do for [i=0:4] {
         colA = i + 1
         colB = j + 6
 
-        # Only show labels on edges to reduce clutter
-        if (j == 4) { set xlabel sprintf("A%d", i) } else { unset xlabel }
-        if (i == 0) { set ylabel sprintf("B%d", j) } else { unset ylabel }
+        # Calculate Correlation
+        stats "$DATA_FILE" u colA:colB nooutput
+        corr = STATS_correlation
+
+        # Reset labels
+        unset label
+
+        # Correlation Label (Top Right)
+        set label 1 sprintf("r=%.2f", corr) at graph 0.95, 0.95 right font ",9"
+
+        # Standard Deviation Labels
+        # Top of Column
+        if (j == 0) {
+            set label 2 sprintf("σ(A%d)=%.2g", i, stdA[i+1]) at graph 0.5, 1.1 center font ",9"
+        }
+        # Right of Row
+        if (i == 4) {
+            set label 3 sprintf("σ(B%d)=%.2g", j, stdB[j+1]) at graph 1.1, 0.5 left font ",9"
+        }
+
+        # Axis Labels (Outer Only - optional, explicitly asked to remove values)
+        # We unset values but keep structure
+        set format x ""
+        set format y ""
+        unset xlabel
+        unset ylabel
+
+        if (j == 4) { set xlabel sprintf("$VAR_A%d", i) }
+        if (i == 0) { set ylabel sprintf("$VAR_B%d", j) offset 1 }
 
         unset key
-        # Make plots square-ish
         set size square
 
-        plot "$TEST_DIR/cca_vars.dat" using colA:colB pt 7 ps 0.5 lc rgb "black"
+        # Zero Cross
+        set xzeroaxis lt 1 lc rgb "black"
+        set yzeroaxis lt 1 lc rgb "black"
+
+        plot "$DATA_FILE" using colA:colB pt 7 ps 0.5 lc rgb "black"
     }
 }
 unset multiplot
 ENDGP
 
-# Run gnuplot
-gnuplot "$GP_SCRIPT"
+    gnuplot "$SCRIPT_FILE"
+}
+
+generate_plot "$TEST_DIR/cca_vars.dat" "$TEST_DIR/cca_corner.png" "CCA Variables (A vs B)" "A" "B"
+generate_plot "$TEST_DIR/pca_vars.dat" "$TEST_DIR/pca_corner.png" "PCA Variables (Coeffs A vs B)" "A" "B"
 
 # Append to report
 cat <<EOF >> "$TEST_DIR/report.md"
 
-## 6. CCA Corner Plot
+## 6. CCA variables
 
 Scatter plots of canonical variables $A_i$ vs $B_j$. The diagonal ($i=j$) should show the strongest correlations.
+Correlation $r$ is shown on each plot. $\sigma$ values indicate standard deviation of the variables.
 
-![CCA Corner Plot](cca_corner.png)
+![CCA Variables](cca_corner.png)
 
-**Gnuplot Script:**
-\`\`\`gnuplot
-\$(cat "$GP_SCRIPT")
-\`\`\`
+## 7. PCA variables
+
+Scatter plots of PCA coefficients $A_i$ vs $B_j$.
+
+![PCA Variables](pca_corner.png)
 
 EOF
 
