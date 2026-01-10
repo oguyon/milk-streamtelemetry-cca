@@ -3,6 +3,29 @@
 #include <stdlib.h>
 #include <math.h>
 
+// Calculate Pearson correlation between two vectors of length N
+double calc_correlation(double *vecA, double *vecB, long N) {
+    double sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
+
+    for (long i = 0; i < N; i++) {
+        sumA += vecA[i];
+        sumB += vecB[i];
+    }
+    double meanA = sumA / N;
+    double meanB = sumB / N;
+
+    for (long i = 0; i < N; i++) {
+        double valA = vecA[i] - meanA;
+        double valB = vecB[i] - meanB;
+        sumAB += valA * valB;
+        sumA2 += valA * valA;
+        sumB2 += valB * valB;
+    }
+
+    if (sumA2 == 0 || sumB2 == 0) return 0.0;
+    return sumAB / sqrt(sumA2 * sumB2);
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <A.fits> <B.fits>\n", argv[0]);
@@ -16,34 +39,49 @@ int main(int argc, char *argv[]) {
     read_fits(argv[1], &A, &Na, &Pa, &xa, &ya, NULL);
     read_fits(argv[2], &B, &Nb, &Pb, &xa, &ya, NULL);
 
-    if (Na != Nb || Pa != Pb) {
-        fprintf(stderr, "Dimensions mismatch: %ldx%ld vs %ldx%ld\n", Na, Pa, Nb, Pb);
+    if (Na != Nb) {
+        fprintf(stderr, "Sample count mismatch: %ld vs %ld\n", Na, Nb);
         return 1;
     }
 
-    printf("Correlation Matrix Diagonals (Ai vs Bi):\n");
-    for (long k = 0; k < Pa; k++) {
-        double sumA = 0, sumB = 0, sumAB = 0, sumA2 = 0, sumB2 = 0;
-        for (long i = 0; i < Na; i++) {
-            double valA = A[i * Pa + k];
-            double valB = B[i * Pb + k];
-            sumA += valA;
-            sumB += valB;
-        }
-        double meanA = sumA / Na;
-        double meanB = sumB / Na;
+    // Allocate temp vectors for extraction
+    double *vecA = malloc(Na * sizeof(double));
+    double *vecB = malloc(Na * sizeof(double));
 
-        for (long i = 0; i < Na; i++) {
-            double valA = A[i * Pa + k] - meanA;
-            double valB = B[i * Pb + k] - meanB;
-            sumAB += valA * valB;
-            sumA2 += valA * valA;
-            sumB2 += valB * valB;
+    printf("| A \\ B |");
+    for (long j = 0; j < Pb; j++) {
+        printf(" B%ld |", j);
+    }
+    printf("\n|");
+    for (long j = 0; j <= Pb; j++) {
+        printf("---|");
+    }
+    printf("\n");
+
+    for (long i = 0; i < Pa; i++) {
+        printf("| **A%ld** |", i);
+        // Extract Col A_i
+        for (long k = 0; k < Na; k++) vecA[k] = A[k * Pa + i];
+
+        for (long j = 0; j < Pb; j++) {
+            // Extract Col B_j
+            for (long k = 0; k < Na; k++) vecB[k] = B[k * Pb + j];
+
+            double r = calc_correlation(vecA, vecB, Na);
+
+            // Highlight off-diagonals if non-zero (e.g. > 0.01)
+            // But main diagonal is i==j (if Pa==Pb)
+
+            if (fabs(r) < 1e-4) {
+                printf(" %.4f |", 0.0);
+            } else {
+                printf(" **%.4f** |", r);
+            }
         }
-        double corr = sumAB / sqrt(sumA2 * sumB2);
-        printf("  Mode %ld: r = %.6f, stdA = %.6f, stdB = %.6f\n", k, corr, sqrt(sumA2/(Na-1)), sqrt(sumB2/(Na-1)));
+        printf("\n");
     }
 
+    free(vecA); free(vecB);
     free(A); free(B);
     return 0;
 }

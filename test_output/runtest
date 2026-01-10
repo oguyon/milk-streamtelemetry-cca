@@ -284,6 +284,15 @@ ENDGP
 generate_plot "$TEST_DIR/cca_vars.dat" "$TEST_DIR/cca_corner.png" "CCA Variables (A vs B)" "A" "B"
 generate_plot "$TEST_DIR/pca_vars.dat" "$TEST_DIR/pca_corner.png" "PCA Variables (Coeffs A vs B)" "A" "B"
 
+# 9. Append Correlation Matrix
+echo "Calculating Correlation Matrix..."
+echo "" >> "$TEST_DIR/report.md"
+echo "## 8. Correlation Matrix of Canonical Variables" >> "$TEST_DIR/report.md"
+echo "" >> "$TEST_DIR/report.md"
+echo "The following table shows the Pearson correlation coefficients between canonical variables $A_i$ and $B_j$." >> "$TEST_DIR/report.md"
+echo "" >> "$TEST_DIR/report.md"
+"$BUILD_DIR/milk-streamtelemetry-verify-corr" "$TEST_DIR/ccaAvar.fits" "$TEST_DIR/ccaBvar.fits" >> "$TEST_DIR/report.md"
+
 # Append to report
 cat <<EOF >> "$TEST_DIR/report.md"
 

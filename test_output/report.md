@@ -96,6 +96,18 @@ The PNG images in this report were generated using the `3DFITS-to-png` tool:
 ```
 
 
+## 8. Correlation Matrix of Canonical Variables
+
+The following table shows the Pearson correlation coefficients between canonical variables $ and $.
+
+| A \ B | B0 | B1 | B2 | B3 | B4 |
+|---|---|---|---|---|---|
+| **A0** | **0.5977** | **-0.2218** | **-0.4545** | **-0.4294** | **-0.1450** |
+| **A1** | **0.1413** | **0.3375** | **0.4571** | **0.4397** | **-0.0693** |
+| **A2** | **0.6285** | **-0.4062** | **0.3267** | **-0.5623** | **0.1794** |
+| **A3** | **0.0133** | **-0.5564** | **0.3543** | **0.5312** | **-0.1049** |
+| **A4** | **-0.2553** | **-0.1400** | **-0.2035** | **0.2328** | **0.4498** |
+
 ## 6. CCA variables
 
 Scatter plots of canonical variables $ vs $. The diagonal (=j$) should show the strongest correlations.
